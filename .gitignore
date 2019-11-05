@@ -10,3 +10,6 @@ dist
 build
 *.jar
 pom.xml.versionsBackup
+*.swp
+.idea
+*.iml

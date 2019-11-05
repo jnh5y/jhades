@@ -2,12 +2,10 @@ package org.jhades.standalone;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.FileVisitResult;
+import java.nio.file.*;
+
 import static java.nio.file.FileVisitResult.CONTINUE;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,11 +78,80 @@ public class JHadesStandaloneReport {
     }
 
     public void scan() throws IOException, URISyntaxException {
+        if(isDir()) {
+            scanDir();
+        } else if(isWar()) {
+            scanWar();
+        } else {
+            throw new IllegalArgumentException("Can only scan wars and jar dirs.");
+        }
+    }
+
+    private boolean isWar() {
+        return warFilePath.endsWith(".war");
+    }
+
+    private boolean isDir() {
+        return FileSystems.getDefault().getPath(warFilePath).toFile().isDirectory();
+    }
+
+    private void scanDir() throws IOException, URISyntaxException {
+        Path start = Paths.get(warFilePath);
+        final List<ClasspathEntry> classpathEntries = new ArrayList<>();
+
+        /* NPHAIR - Walk through  every jar in the web-inf/lib and add that to our files to scan. */
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                String filePath = file.toString();
+                if(filePath.endsWith(".jar")) {
+                    Matcher matcher = JAR_NAME.matcher(filePath);
+                    if(matcher.matches()) {
+                        updateStatus("Processing jar " + matcher.group(1));
+                    }
+                    logger.debug("Adding jar: " + filePath);
+
+                    filePath = "file:///" + filePath.replaceAll("\\\\", "/");
+                    logger.debug("jar URL: " + filePath);
+                    classpathEntries.add(new ClasspathEntry(null, filePath));
+                }
+                return CONTINUE;
+            }
+        });
+
+        /* NPHAIR - build a scanner listener that just notifies on start and finish of a jar being scanned. */
+        ClasspathScannerListener listener = (new ClasspathScannerListener() {
+            @Override
+            public void onEntryScanStart(ClasspathEntry entry) {
+                String filePath = entry.getUrl().toString();
+                Matcher matcher = JAR_NAME.matcher(filePath);
+                if (matcher.matches()) {
+                    updateStatus("Processing jar " + matcher.group(1));
+                }
+            }
+
+            @Override
+            public void onEntryScanEnd(ClasspathEntry entry) {
+                String filePath = entry.getUrl().toString();
+                Matcher matcher = JAR_NAME.matcher(filePath);
+                if (matcher.matches()) {
+                    updateStatus("Finished processing jar " + matcher.group(1));
+                }
+            }
+        });
+
+        List<ClasspathResource> classpathResources = ClasspathEntries.findClasspathResourcesInEntries(classpathEntries, logger, listener);
+
+        processClasspathResources(classpathResources);
+    }
+
+    private void scanWar() throws IOException, URISyntaxException {
         logger.debug("Extracting war " + warFilePath + "...");
 
         updateStatus("Deleting temporary directory");
         FileUtils.deleteDirectory(tmpPath);
 
+        /* NPHAIR - this just prints the names of jars as they are unzipped */
         updateStatus("Unziping WAR");
         ZipUtils.unzip(warFilePath, tmpPath, new ZipUtils.UnzipProgressListener() {
             @Override
@@ -96,6 +163,7 @@ public class JHadesStandaloneReport {
             }
         });
 
+        /* NPHAIR - Now that we have unziped the war into the temp directory, add the web-inf/classes folder to our entries to scan. */
         final List<ClasspathEntry> classpathEntries = new ArrayList<>();
 
         // add classes folder
@@ -109,6 +177,7 @@ public class JHadesStandaloneReport {
 
         updateStatus("Scanning WAR");
 
+        /* NPHAIR - Walk through  every jar in the web-inf/lib and add that to our files to scan. */
         Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -128,6 +197,7 @@ public class JHadesStandaloneReport {
             }
         });
 
+        /* NPHAIR - build a scanner listener that just notifies on start and finish of a jar being scanned. */
         ClasspathScannerListener listener = (new ClasspathScannerListener() {
             @Override
             public void onEntryScanStart(ClasspathEntry entry) {
@@ -185,6 +255,7 @@ public class JHadesStandaloneReport {
             report.print();
         }
 
+        // NPHAIR - don't care about this yet ...
         String searchByFileName = System.getProperty("search.by.file.name");
 
         if (searchByFileName != null) {
