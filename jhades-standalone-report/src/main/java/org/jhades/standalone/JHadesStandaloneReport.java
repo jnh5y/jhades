@@ -1,27 +1,24 @@
 package org.jhades.standalone;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.*;
-
-import static java.nio.file.FileVisitResult.CONTINUE;
-
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.jhades.model.ClasspathEntries;
-import org.jhades.model.ClasspathEntry;
-import org.jhades.model.ClasspathResource;
-import org.jhades.model.ClasspathResourceVersion;
-import org.jhades.model.JarPair;
+import com.github.zafarkhaja.semver.Version;
+import org.jhades.model.*;
 import org.jhades.reports.DuplicatesReport;
 import org.jhades.service.ClasspathScanner;
 import org.jhades.service.ClasspathScannerListener;
 import org.jhades.utils.FileUtils;
 import org.jhades.utils.StdOutLogger;
 import org.jhades.utils.ZipUtils;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.nio.file.FileVisitResult.CONTINUE;
 
 public class JHadesStandaloneReport {
 
@@ -68,7 +65,7 @@ public class JHadesStandaloneReport {
             Files.createDirectories(Paths.get(tmpPath));
         }
 
-        logger.info("warFilePath = " + warFilePath);
+        logger.info("warFilePath/directory to analyze = " + warFilePath);
         logger.info("tmpPath = " + tmpPath);
 
         JHadesStandaloneReport warScanner = new JHadesStandaloneReport(warFilePath, tmpPath);
@@ -223,7 +220,7 @@ public class JHadesStandaloneReport {
         processClasspathResources(classpathResources);
     }
 
-    private void processClasspathResources(List<ClasspathResource> classpathResources) {
+    private void processClasspathResources(List<ClasspathResource> classpathResources) throws IOException, URISyntaxException {
 
         boolean isDetailedMode = "true".equals(System.getProperty("detail"));
         boolean isExcludeSameSizeDups = "true".equals(System.getProperty("exclude.same.size.dups"));
@@ -239,7 +236,10 @@ public class JHadesStandaloneReport {
                     + getJarName(jarOverlapReportLine.getJar2().getUrl())
                     + " - total overlapping classes: " + jarOverlapReportLine.getDupClassesTotal();
             System.out.println(reportLine);
+
             totalDupClasses += jarOverlapReportLine.getDupClassesTotal();
+
+            reportDuplicateNameJars(jarOverlapReportLine);
         }
 
         System.out.println("\nTotal number of classes with more than one version: " + totalDupClasses + "\n");
@@ -272,6 +272,38 @@ public class JHadesStandaloneReport {
             }
         }
 
+    }
+
+    private void reportDuplicateNameJars(JarPair jarOverlapReportLine) {
+        String jar1 = getJarName(jarOverlapReportLine.getJar1().getUrl());
+        int split1 = jar1.lastIndexOf("-");
+        String artifact1 = jar1.substring(0, split1);
+        String version1  = jar1.substring(split1+1, jar1.length()-4);
+
+        String jar2 = getJarName(jarOverlapReportLine.getJar2().getUrl());
+        int split2 = jar2.lastIndexOf("-");
+        String artifact2 = jar2.substring(0, split2);
+        String version2  = jar2.substring(split2+1, jar2.length()-4);
+
+        if (artifact1.equals(artifact2)) {
+            System.out.println("** WARNING: Possible duplicate jars: " + jar1 + " " + jar2);
+
+            reportOlderVersion(jar1, version1, jar2, version2);
+        }
+    }
+
+    private void reportOlderVersion(String jar1, String version1, String jar2, String version2) {
+        try {
+            String olderVersion = "";
+            if (Version.valueOf(version1).lessThan(Version.valueOf(version2))) {
+                olderVersion = jar1;
+            } else {
+                olderVersion = jar2;
+            }
+            System.out.println("** WARNING: Consider removing the older version: " + olderVersion);
+        } catch (Exception e) {
+            System.out.println("** WARNING: Could not determine which jar is older.  Version numbering may not follow SemVer.");
+        }
     }
 
     private String getJarName(String url) {
