@@ -232,11 +232,16 @@ public class JHadesStandaloneReport {
         System.out.println("\n>>>> Jar overlap report: \n");
 
         for (JarPair jarOverlapReportLine : overlapReportLines) {
+            // Calculate percent overlap
+            int count1 = jarOverlapReportLine.getJar1().getResourceVersions().size();
+            int count2 = jarOverlapReportLine.getJar2().getResourceVersions().size();
+            Long duplicateCount = jarOverlapReportLine.getDupClassesTotal();
+
             String reportLine = getJarName(jarOverlapReportLine.getJar1().getUrl()) + " overlaps with "
                     + getJarName(jarOverlapReportLine.getJar2().getUrl())
-                    + " - total overlapping classes: " + jarOverlapReportLine.getDupClassesTotal();
+                    + " - total overlapping classes: " + jarOverlapReportLine.getDupClassesTotal()
+                    + " (percent overlap: "  + String.format("%.2f",jarOverlapReportLine.percentOverlap()) + ")";
             System.out.println(reportLine);
-
             totalDupClasses += jarOverlapReportLine.getDupClassesTotal();
 
             reportDuplicateNameJars(jarOverlapReportLine);
@@ -274,7 +279,7 @@ public class JHadesStandaloneReport {
 
     }
 
-    private void reportDuplicateNameJars(JarPair jarOverlapReportLine) {
+    private void reportDuplicateNameJars(JarPair jarOverlapReportLine) throws IOException, URISyntaxException {
         String jar1 = getJarName(jarOverlapReportLine.getJar1().getUrl());
         int split1 = jar1.lastIndexOf("-");
         String artifact1 = jar1.substring(0, split1);
@@ -290,6 +295,11 @@ public class JHadesStandaloneReport {
 
             reportOlderVersion(jar1, version1, jar2, version2);
         }
+//
+//        int count1 = jarOverlapReportLine.getJar1().getResourceVersions().size();
+//        int count2 = jarOverlapReportLine.getJar2().getResourceVersions().size();
+//        Long duplicateCount = jarOverlapReportLine.getDupClassesTotal();
+//        System.out.println(jar1 + " has " + count1 + " classes.  " + jar2 + " has " + count2 + " classes.  Duplicate Count: " + duplicateCount);
     }
 
     private void reportOlderVersion(String jar1, String version1, String jar2, String version2) {
