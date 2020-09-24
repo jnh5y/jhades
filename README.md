@@ -1,7 +1,35 @@
 JNH's Fork of JHades
 =====
-> mvn clean install
-> ./jhades /path/to/your/directoryOrWar
+```
+mvn clean install
+./jhades /path/to/your/directoryOrWar
+```
+
+Your output will look like:
+```
+....
+Processing jar xml-apis-1.4.01.jar                                                                                                         
+Finished processing jar xml-apis-1.4.01.jar                                                                                   
+                                                                                                                            
+>>>> Jar overlap report:                                                                                                             
+                                                                                                                            
+httpclient-4.5.3.jar overlaps with httpclient-4.5.11.jar - total overlapping classes: 462 (percent overlap: 96.65)                       
+** WARNING: Possible duplicate jars: httpclient-4.5.3.jar httpclient-4.5.11.jar                                         
+** WARNING: Consider removing the older version: httpclient-4.5.3.jar                                                           
+javax.mail-1.5.0.jar overlaps with mail-1.4.jar - total overlapping classes: 247 (percent overlap: 80.46) 
+joda-time-2.3.jar overlaps with joda-time-2.8.1.jar - total overlapping classes: 229 (percent overlap: 31.81)       
+** WARNING: Possible duplicate jars: joda-time-2.3.jar joda-time-2.8.1.jar                                                     
+** WARNING: Could not determine which jar is older.  Version numbering may not follow SemVer.                              
+javax.mail-1.5.0.jar overlaps with javaee-api-7.0.jar - total overlapping classes: 135 (percent overlap: 6.02)                             
+```
+
+From this output we can see a few things: 
+* There are jars which have the same exact name.  A SemVer library helps suggest which is 'older'.
+* A percent overlap is calculated.  The higher the overlap, the more chance of issues.
+
+Recommendations:
+* Do not have jars which have the same 'artifactId' in your directory/war.
+* Use this tool to identify where aggressive shading/bundling may been causing trouble.
 
 JHades - Your way out of Jar Hell!
 ======
