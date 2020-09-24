@@ -1,3 +1,8 @@
+JNH's Fork of JHades
+=====
+> mvn clean install
+> ./jhades /path/to/your/directoryOrWar
+
 JHades - Your way out of Jar Hell!
 ======
 
