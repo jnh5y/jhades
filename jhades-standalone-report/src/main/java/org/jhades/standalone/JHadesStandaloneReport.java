@@ -238,6 +238,9 @@ public class JHadesStandaloneReport {
                     + " (percent overlap: "  + String.format("%.2f",jarOverlapReportLine.percentOverlap()) + ")";
             System.out.println(reportLine);
             totalDupClasses += jarOverlapReportLine.getDupClassesTotal();
+            if (jarOverlapReportLine.percentOverlap() == 100.0) {
+                System.out.println("** WARNING (Containment): Jar " + jarOverlapReportLine.getSmallerJar() + " may be contained in " + jarOverlapReportLine.getLargerJar());
+            }
 
             reportDuplicateNameJars(jarOverlapReportLine);
         }
@@ -289,7 +292,7 @@ public class JHadesStandaloneReport {
 //        System.out.println("For jar " + jar2 + " computed " + artifact2 + " : " + version2);
 
         if (artifact1.equals(artifact2) || artifact1.startsWith(artifact2) || artifact2.startsWith(artifact1)) {
-            System.out.println("** WARNING: Possible duplicate jars: " + jar1 + " " + jar2);
+            System.out.println("** WARNING (Same name): Possible duplicate jars: " + jar1 + " " + jar2);
             reportOlderVersion(jar1, version1, jar2, version2);
         }
     }

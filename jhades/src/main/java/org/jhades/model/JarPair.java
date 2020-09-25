@@ -60,6 +60,27 @@ public class JarPair {
     public Long getDupClassesTotal() {
         return dupClassesTotal;
     }
+
+    public String getSmallerJar() throws IOException, URISyntaxException {
+        long count1 = jar1.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
+        long count2 = jar2.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
+        if (count1 <= count2) {
+            return jar1.getJarName();
+        } else {
+            return jar2.getJarName();
+        }
+    }
+
+    public String getLargerJar() throws IOException, URISyntaxException {
+        long count1 = jar1.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
+        long count2 = jar2.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
+        if (count1 <= count2) {
+            return jar2.getJarName();
+        } else {
+            return jar1.getJarName();
+        }
+    }
+
     public double percentOverlap() throws IOException, URISyntaxException {
         long count1 = jar1.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
         long count2 = jar2.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
