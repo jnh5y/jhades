@@ -222,6 +222,7 @@ public class ClasspathEntry {
             @Override
             public FileVisitResult visitFile(Path classpathResourceFile, BasicFileAttributes attrs) throws IOException {
                 String resourceName = classpathResourceFile.toString();
+//                System.out.println(getUrl() + " -" + resourceName);
                 logger.debug(getUrl() + " -" + resourceName);
                 ClasspathResourceVersion classFileVersion = new ClasspathResourceVersion(ClasspathEntry.this, resourceName, attrs.size());
                 resourceVersions.add(classFileVersion);

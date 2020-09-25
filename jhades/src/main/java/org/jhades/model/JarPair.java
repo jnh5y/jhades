@@ -3,6 +3,7 @@ package org.jhades.model;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  *
@@ -60,10 +61,11 @@ public class JarPair {
         return dupClassesTotal;
     }
     public double percentOverlap() throws IOException, URISyntaxException {
-        int count1 = jar1.getResourceVersions().size();
-        int count2 = jar2.getResourceVersions().size();
+        long count1 = jar1.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
+        long count2 = jar2.getResourceVersions().stream().filter(classpathResourceVersion -> classpathResourceVersion.getResourceName().endsWith("class")).count();
         long duplicateCount = dupClassesTotal;
-        int larger = Math.max(count1, count2);
-        return duplicateCount * 100.0 / larger;
+        double percentage1 = Math.min(100, duplicateCount*100.0/count1);
+        double percentage2 = Math.min(100, duplicateCount*100.0/count2);
+        return Math.max(percentage1, percentage2);
     }
 }
