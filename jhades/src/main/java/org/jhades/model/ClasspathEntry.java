@@ -13,13 +13,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.github.zafarkhaja.semver.Version;
 import org.jhades.utils.StdOutLogger;
 
 /**
@@ -34,12 +35,22 @@ public class ClasspathEntry {
     private final String url;
     private List<ClasspathResourceVersion> resourceVersions = new ArrayList<>();
     private boolean lazyLoadDone = false;
+    private final String jarName;
+    private String artifactId = "";
+    private Version version = null;
+
 
     public ClasspathEntry(ClazzLoader classLoader, String url) {
         this.classLoader = classLoader;
         this.url = url;
+        this.jarName = getJarName(url);
+        try {
+            calculateArtifactIdAndVersion();
+        }
+        catch (Exception e) {
+            // If we cannot calculate the artifactId and Version that's fine.
+        }
     }
-
     public ClazzLoader getClassLoader() {
         return classLoader;
     }
@@ -48,6 +59,56 @@ public class ClasspathEntry {
         return url;
     }
 
+    public String getJarName() {
+        return jarName;
+    }
+
+    private void calculateArtifactIdAndVersion() {
+        // Considerations:  Remove SNAPSHOT
+        // Handle situations without numbers
+        // Samples
+        // jai_core.jar overlaps with jai_core-1.1.3.jar
+        // geomesa-hbase-gs-plugin_2.11-2.3.2-shaded.jar
+        // foo-10.0.2-SNAPSHOT.jar  foo-10.0.0.jar
+
+        artifactId = jarName.substring(0, jarName.length()-4);
+
+        String[] splits = artifactId.split("-");
+
+        for(int i = 0; i <= splits.length; i++) {
+            try {
+                version = Version.valueOf(splits[i]);
+            } catch (Exception e) {
+                // Skip
+            }
+            if (version != null) {
+               artifactId = String.join("-", Arrays.copyOf(splits, i-1));
+            }
+        }
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    private static final Pattern JAR_NAME = Pattern.compile("^.*/(.*jar)$");
+    private String getJarName(String url) {
+        String jarName = "";
+        if (url != null) {
+            Matcher matcher = JAR_NAME.matcher(url);
+            if (matcher.matches()) {
+                jarName = matcher.group(1);
+            }
+        }
+
+        return jarName;
+    }
+
+
+
+    public Version getVersion() {
+        return version;
+    }
     @Override
     public int hashCode() {
         int hash = 3;

@@ -232,11 +232,6 @@ public class JHadesStandaloneReport {
         System.out.println("\n>>>> Jar overlap report: \n");
 
         for (JarPair jarOverlapReportLine : overlapReportLines) {
-            // Calculate percent overlap
-            int count1 = jarOverlapReportLine.getJar1().getResourceVersions().size();
-            int count2 = jarOverlapReportLine.getJar2().getResourceVersions().size();
-            Long duplicateCount = jarOverlapReportLine.getDupClassesTotal();
-
             String reportLine = getJarName(jarOverlapReportLine.getJar1().getUrl()) + " overlaps with "
                     + getJarName(jarOverlapReportLine.getJar2().getUrl())
                     + " - total overlapping classes: " + jarOverlapReportLine.getDupClassesTotal()
@@ -280,32 +275,29 @@ public class JHadesStandaloneReport {
     }
 
     private void reportDuplicateNameJars(JarPair jarOverlapReportLine) throws IOException, URISyntaxException {
-        String jar1 = getJarName(jarOverlapReportLine.getJar1().getUrl());
-        int split1 = jar1.lastIndexOf("-");
-        String artifact1 = jar1.substring(0, split1);
-        String version1  = jar1.substring(split1+1, jar1.length()-4);
+        ClasspathEntry entry1 = jarOverlapReportLine.getJar1();
+        String jar1 = entry1.getJarName();
+        String artifact1 = entry1.getArtifactId();
+        Version version1  = entry1.getVersion();
 
-        String jar2 = getJarName(jarOverlapReportLine.getJar2().getUrl());
-        int split2 = jar2.lastIndexOf("-");
-        String artifact2 = jar2.substring(0, split2);
-        String version2  = jar2.substring(split2+1, jar2.length()-4);
+        ClasspathEntry entry2 = jarOverlapReportLine.getJar2();
+        String jar2 = entry2.getJarName();
+        String artifact2 = entry2.getArtifactId();
+        Version version2  = entry2.getVersion();
 
-        if (artifact1.equals(artifact2)) {
+//        System.out.println("For jar " + jar1 + " computed " + artifact1 + " : " + version1);
+//        System.out.println("For jar " + jar2 + " computed " + artifact2 + " : " + version2);
+
+        if (artifact1.equals(artifact2) || artifact1.startsWith(artifact2) || artifact2.startsWith(artifact1)) {
             System.out.println("** WARNING: Possible duplicate jars: " + jar1 + " " + jar2);
-
             reportOlderVersion(jar1, version1, jar2, version2);
         }
-//
-//        int count1 = jarOverlapReportLine.getJar1().getResourceVersions().size();
-//        int count2 = jarOverlapReportLine.getJar2().getResourceVersions().size();
-//        Long duplicateCount = jarOverlapReportLine.getDupClassesTotal();
-//        System.out.println(jar1 + " has " + count1 + " classes.  " + jar2 + " has " + count2 + " classes.  Duplicate Count: " + duplicateCount);
     }
 
-    private void reportOlderVersion(String jar1, String version1, String jar2, String version2) {
+    private void reportOlderVersion(String jar1, Version version1, String jar2, Version version2) {
         try {
             String olderVersion = "";
-            if (Version.valueOf(version1).lessThan(Version.valueOf(version2))) {
+            if (version1.lessThan(version2)) {
                 olderVersion = jar1;
             } else {
                 olderVersion = jar2;
