@@ -53,13 +53,17 @@
   </developers>       
 
     <properties>
-        <junit.version>4.11</junit.version>
+        <scala.version>2.11.7</scala.version>
+        <junit.version>4.12</junit.version>
         <servlet.version>2.5</servlet.version>
+        <specs2.version>4.3.2</specs2.version>
+        <scala.binary.version>2.11</scala.binary.version>
     </properties>
 
     <modules>
         <module>jhades</module>
         <module>jhades-standalone-report</module>
+        <module>shades</module>
     </modules>
 
     <dependencyManagement>
@@ -96,6 +100,34 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.scala-lang</groupId>
+                            <artifactId>scala-reflect</artifactId>
+                            <version>${scala.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <jvmArgs>
+                        <jvmArg>-Xms1024m</jvmArg>
+                        <jvmArg>-Xmx8G</jvmArg>
+                        <jvmArg>-Duser.timezone=UTC</jvmArg>
+                        <jvmArg>-Djava.awt.headless=true</jvmArg>
+                    </jvmArgs>
+                    <args>
+                        <arg>-nowarn</arg>
+                        <arg>-unchecked</arg>
+                        <arg>-deprecation</arg>
+                    </args>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                    <scalaVersion>${scala.version}</scalaVersion>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
