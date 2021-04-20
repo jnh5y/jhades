@@ -65,6 +65,10 @@
             <artifactId>specs2-mock_${scala.binary.version}</artifactId>
             <version>${specs2.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.vafer</groupId>
+            <artifactId>jdependency</artifactId>
+        </dependency>
     </dependencies>
 
 
