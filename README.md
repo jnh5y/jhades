@@ -2,7 +2,7 @@ JHades - Your way out of Jar Hell!
 ======
 First
 Second
-{% data reusables.foo.bar %}
+{% data.reusables.foo.bar %}
 Third
 {% Import %}
 
