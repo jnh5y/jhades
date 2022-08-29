@@ -5,7 +5,6 @@ First
 
 Second
 Third
-{% include Import.md %}
 
 JHades is a Java classpath troubleshooting tool. It helps to solve common Java classpath / Jar Hell related problems 
 such as ClassNotFoundException, NoClassDefFoundError, ClassCastException, NoSuchMethodException, LinkageError, etc.
