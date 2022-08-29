@@ -1,7 +1,6 @@
 JHades - Your way out of Jar Hell!
 ======
 First
-{% data foo.bar.meaning_of_life %}
 Second
 {% data reusables.foo.bar %}
 Third
