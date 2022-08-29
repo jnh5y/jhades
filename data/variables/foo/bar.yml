@@ -1,0 +1,7 @@
+# multiple short strings in one file
+meaning_of_life: 42
+
+# and they can be nested if needed
+nested:
+  values:
+    too: Yes!
