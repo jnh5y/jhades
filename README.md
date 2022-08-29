@@ -4,6 +4,7 @@ First
 {% include_relative Import.md %}
 
 Second
+{% include bar.md}
 Third
 
 JHades is a Java classpath troubleshooting tool. It helps to solve common Java classpath / Jar Hell related problems 
