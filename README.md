@@ -1,5 +1,11 @@
 JHades - Your way out of Jar Hell!
 ======
+First
+{% data foo.bar.meaning_of_life %}
+Second
+{% data reusables.foo.bar %}
+Third
+{% Import %}
 
 JHades is a Java classpath troubleshooting tool. It helps to solve common Java classpath / Jar Hell related problems 
 such as ClassNotFoundException, NoClassDefFoundError, ClassCastException, NoSuchMethodException, LinkageError, etc.
