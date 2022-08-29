@@ -1,9 +1,11 @@
 JHades - Your way out of Jar Hell!
 ======
 First
+{% include_relative Import.md %}
+
 Second
 Third
-{% Import %}
+{% include Import.md %}
 
 JHades is a Java classpath troubleshooting tool. It helps to solve common Java classpath / Jar Hell related problems 
 such as ClassNotFoundException, NoClassDefFoundError, ClassCastException, NoSuchMethodException, LinkageError, etc.
