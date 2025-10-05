@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -19,6 +20,7 @@ import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.github.zafarkhaja.semver.Version;
 import org.jhades.utils.StdOutLogger;
@@ -140,6 +142,10 @@ public class ClasspathEntry {
         return url != null && url.endsWith(".jar");
     }
 
+    public boolean isJRT() {
+        return url != null && url.startsWith("jrt:/");
+    }
+
     public boolean isClassFolder() {
         return url != null && url.endsWith("/");
     }
@@ -175,11 +181,81 @@ public class ClasspathEntry {
                 } catch (Exception exc) {
                     logger.debug("Could not scan jar: " + getUrl() + " - reason:" + exc.getMessage());
                 }
+            } else if (isJRT()) {
+                List<String> classes = listClassesFromJrt(url);
+                for (String aClass : classes) {
+                    System.out.println("Found " + aClass);
+                }
             }
             lazyLoadDone = true;
         }
 
         return resourceVersions;
+    }
+
+    /**
+     * Given a jrt URI string that is one of:
+     *  - "jrt:/"                       -> list classes from all modules
+     *  - "jrt:/modules/<module>"       -> list classes in that module
+     *  - "jrt:/modules/<module>/<path>"-> list classes under that module path
+     *
+     * Returns fully qualified binary class names (e.g. java.lang.Object or
+     * com.example.MyClass$InnerClass) for all .class files found.
+     */
+    public static List<String> listClassesFromJrt(String jrtUri) throws IOException {
+        URI uri = URI.create(jrtUri);
+        try (FileSystem jrtFs = FileSystems.newFileSystem(new URI("jrt:/"), java.util.Collections.emptyMap())) {
+            Path root = jrtFs.getPath(uri.getPath());
+            if (root == null) root = jrtFs.getPath("/"); // defensive
+
+            List<String> classes = new ArrayList<>();
+
+            // If top-level jrt:/ or /modules, we walk modules root
+            if ("/".equals(root.toString()) || "/modules".equals(root.toString())) {
+                Path modules = jrtFs.getPath("/modules");
+                try (DirectoryStream<Path> mods = Files.newDirectoryStream(modules)) {
+                    for (Path mod : mods) {
+                        Path modRoot = modules.resolve(mod.getFileName().toString());
+                        classes.addAll(listClassesUnder(modRoot));
+                    }
+                }
+            } else {
+                // Otherwise walk the provided path (module or subpath)
+                if (root.toString().startsWith("/modules")) {
+                    System.out.println("Visiting a module: " + root);
+                    classes.addAll(JrtClassLister.listClassesFromJrt(root.toUri()));
+                } else {
+                    classes.addAll(listClassesUnder(root));
+                }
+            }
+
+            return classes;
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return List.of();
+    }
+
+    // Walks a given jrt Path and returns binary class names for all .class files beneath it
+    private static List<String> listClassesUnder(Path start) throws IOException {
+        List<String> result = new ArrayList<>();
+        if (!Files.exists(start)) return result;
+
+        try (Stream<Path> stream = Files.walk(start)) {
+            stream.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class"))
+                    .forEach(p -> {
+                        // path relative to module root or supplied start
+                        Path rel = start.relativize(p);
+                        String unixPath = rel.toString().replace(FileSystems.getDefault().getSeparator(), "/");
+                        // convert "java/lang/Object.class" -> "java.lang.Object"
+                        if (unixPath.endsWith(".class")) {
+                            String classPath = unixPath.substring(0, unixPath.length() - ".class".length());
+                            String className = classPath.replace('/', '.');
+                            result.add(className);
+                        }
+                    });
+        }
+        return result;
     }
 
     /**

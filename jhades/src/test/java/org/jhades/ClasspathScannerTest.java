@@ -66,6 +66,15 @@ public class ClasspathScannerTest {
     }
 
     @Test
+    public void testFindJUnitClass() {
+        ClasspathResource found = scanner.findClass(Test.class);
+
+        assertNotNull("String class must exist on the classpath.", found);
+        assertTrue("matches cannot be empty.", found.getResourceFileVersions().size() > 0);
+        assertTrue("String class not found.", found.getName().contains("Test"));
+    }
+
+    @Test
     public void testFindWithRegularExpression() {
         List<ClasspathResource> matches = scanner.findByRegex("java/lang/String.class");
 
