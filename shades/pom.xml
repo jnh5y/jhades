@@ -11,7 +11,7 @@
     <name>Shades</name>
 
     <properties>
-        <asm.version>7.3.1</asm.version>
+        <asm.version>9.5</asm.version>
     </properties>
 
     <dependencies>
